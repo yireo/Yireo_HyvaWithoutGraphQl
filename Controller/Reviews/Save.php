@@ -102,6 +102,12 @@ class Save implements HttpPostActionInterface, CsrfAwareActionInterface
         return null;
     }
 
+    /**
+     * Bypass the framework CSRF validator for this AJAX endpoint.
+     *
+     * The default validator skips AJAX requests and would respond with a redirect instead of JSON.
+     * CSRF protection is enforced explicitly inside execute() through the form-key validator.
+     */
     public function validateForCsrf(RequestInterface $request): ?bool
     {
         return true;

@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace Yireo\HyvaWithoutGraphQl\Service;
 
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Review\Helper\Data as ReviewHelper;
 use Magento\Review\Model\RatingFactory;
+use Magento\Review\Model\ResourceModel\Review as ReviewResource;
 use Magento\Review\Model\Review;
 use Magento\Review\Model\Review\Config as ReviewConfig;
 use Magento\Review\Model\ReviewFactory;
@@ -22,6 +24,7 @@ class ReviewSaver
     public function __construct(
         private readonly ProductRepositoryInterface $productRepository,
         private readonly ReviewFactory $reviewFactory,
+        private readonly ReviewResource $reviewResource,
         private readonly RatingFactory $ratingFactory,
         private readonly ReviewConfig $reviewConfig,
         private readonly ReviewHelper $reviewHelper,
@@ -73,8 +76,9 @@ class ReviewSaver
             ->setStatusId(Review::STATUS_PENDING)
             ->setCustomerId($customerId ?: null)
             ->setStoreId($storeId)
-            ->setStores([$storeId])
-            ->save();
+            ->setStores([$storeId]);
+
+        $this->reviewResource->save($review);
 
         foreach ($ratings as $ratingId => $optionId) {
             $this->ratingFactory->create()
@@ -87,7 +91,7 @@ class ReviewSaver
         $review->aggregate();
     }
 
-    private function getProduct(string $sku): \Magento\Catalog\Api\Data\ProductInterface
+    private function getProduct(string $sku): ProductInterface
     {
         try {
             return $this->productRepository->get($sku);

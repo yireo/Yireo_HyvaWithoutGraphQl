@@ -61,24 +61,24 @@ class CustomerReviewProvider
     }
 
     /**
-     * @param Product $review
+     * @param Product $reviewProduct The product model returned by the review-product collection.
      * @param int $storeId
      * @return array<string, mixed>
      */
-    private function formatReview(Product $review, int $storeId): array
+    private function formatReview(Product $reviewProduct, int $storeId): array
     {
         return [
-            'created_at' => $this->formatDate((string)$review->getData('review_created_at')),
-            'summary' => (string)$review->getData('title'),
-            'text' => (string)$review->getData('detail'),
-            'nickname' => (string)$review->getData('nickname'),
+            'created_at' => $this->formatDate((string)$reviewProduct->getData('review_created_at')),
+            'summary' => (string)$reviewProduct->getData('title'),
+            'text' => (string)$reviewProduct->getData('detail'),
+            'nickname' => (string)$reviewProduct->getData('nickname'),
             'product' => [
-                'name' => (string)$review->getName(),
-                'sku' => (string)$review->getSku(),
-                'url_key' => (string)$review->getData('url_key'),
-                'image' => $this->productDataFormatter->getImage($review, 'product_base_image'),
+                'name' => (string)$reviewProduct->getName(),
+                'sku' => (string)$reviewProduct->getSku(),
+                'url_key' => (string)$reviewProduct->getData('url_key'),
+                'image' => $this->productDataFormatter->getImage($reviewProduct, 'product_base_image'),
             ],
-            'ratings_breakdown' => $this->getRatingsBreakdown((int)$review->getData('review_id'), $storeId),
+            'ratings_breakdown' => $this->getRatingsBreakdown((int)$reviewProduct->getData('review_id'), $storeId),
         ];
     }
 

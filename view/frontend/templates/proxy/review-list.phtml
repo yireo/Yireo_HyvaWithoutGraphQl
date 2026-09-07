@@ -35,6 +35,12 @@ $endpoints = $viewModels->require(Endpoints::class);
         window.initReviewList = function (...args) {
             const component = original.apply(this, args);
 
+            <?php /* The original implementation waits for the GraphQL customer token. The session
+                     cookie is enough for a regular controller, so the token check is dropped. */ ?>
+            component.onPrivateContentLoaded = function () {
+                this.getReviewsList();
+            };
+
             component.getReviewsList = function () {
                 this.isLoading = true;
 

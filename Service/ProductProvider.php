@@ -3,8 +3,9 @@ declare(strict_types=1);
 
 namespace Yireo\HyvaWithoutGraphQl\Service;
 
+use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\ProductLinkManagementInterface;
-use Magento\Catalog\Model\CategoryFactory;
+use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Config as CatalogConfig;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
@@ -35,7 +36,7 @@ class ProductProvider
     public function __construct(
         private readonly CollectionFactory $collectionFactory,
         private readonly CatalogConfig $catalogConfig,
-        private readonly CategoryFactory $categoryFactory,
+        private readonly CategoryRepositoryInterface $categoryRepository,
         private readonly Visibility $visibility,
         private readonly ProductLinkManagementInterface $productLinkManagement,
         private readonly ProductFilterParser $productFilterParser,
@@ -181,8 +182,15 @@ class ProductProvider
             return;
         }
 
-        $category = $this->categoryFactory->create()->load(reset($categoryIds));
-        if ($category->getId()) {
+        try {
+            $category = $this->categoryRepository->get((int)reset($categoryIds));
+        } catch (Throwable $throwable) {
+            $this->logger->debug('Unable to load slider category: ' . $throwable->getMessage());
+
+            return;
+        }
+
+        if ($category instanceof Category) {
             $collection->addCategoryFilter($category);
         }
     }

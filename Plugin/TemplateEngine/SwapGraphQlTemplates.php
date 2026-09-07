@@ -88,7 +88,7 @@ class SwapGraphQlTemplates
             return $result;
         }
 
-        if (!str_contains($result, self::GRAPHQL_MARKER)) {
+        if (stripos($result, self::GRAPHQL_MARKER) === false) {
             return $result;
         }
 

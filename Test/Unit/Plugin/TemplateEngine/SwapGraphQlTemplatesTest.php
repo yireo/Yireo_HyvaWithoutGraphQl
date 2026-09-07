@@ -120,6 +120,26 @@ class SwapGraphQlTemplatesTest extends TestCase
         $this->assertSame('<script>fetch(BASE_URL + "graphql")</script><script>proxy</script>', $result);
     }
 
+    public function testAfterRenderAppendsProxyTemplateForMixedCaseGraphQlMarker(): void
+    {
+        $this->config->method('isEnabled')->willReturn(true);
+
+        $block = $this->createMock(Template::class);
+        $block->method('getTemplateFile')
+            ->with('Yireo_HyvaWithoutGraphQl::proxy/review-form.phtml')
+            ->willReturn('/proxy/review-form.phtml');
+        $block->method('fetchView')->with('/proxy/review-form.phtml')->willReturn('<script>proxy</script>');
+
+        $result = $this->createPlugin()->afterRender(
+            $this->subject,
+            '<script>fetch(BASE_URL + "GraphQL")</script>',
+            $block,
+            '/vendor/hyva-themes/theme/Magento_Review/templates/form.phtml'
+        );
+
+        $this->assertSame('<script>fetch(BASE_URL + "GraphQL")</script><script>proxy</script>', $result);
+    }
+
     public function testAfterRenderSkipsOutputWithoutGraphQlCall(): void
     {
         $this->config->method('isEnabled')->willReturn(true);
