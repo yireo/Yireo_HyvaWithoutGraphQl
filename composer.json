@@ -1,0 +1,31 @@
+{
+    "name": "yireo/magento2-hyva-without-graph-ql",
+    "version": "0.0.1",
+    "description": "Replace the GraphQL calls of various Hyva templates with regular Magento controllers",
+    "type": "magento2-module",
+    "require": {
+        "php": "~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
+        "magento/framework": "*",
+        "magento/module-catalog": "*",
+        "magento/module-config": "*",
+        "magento/module-customer": "*",
+        "magento/module-review": "*",
+        "magento/module-store": "*",
+        "magento/module-theme": "*"
+    },
+    "suggest": {
+        "magento/module-re-captcha-ui": "Validate reCAPTCHA when submitting a product review",
+        "magento/module-re-captcha-validation-api": "Validate reCAPTCHA when submitting a product review"
+    },
+    "license": [
+        "OSL-3.0"
+    ],
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Yireo\\HyvaWithoutGraphQl\\": ""
+        }
+    }
+}

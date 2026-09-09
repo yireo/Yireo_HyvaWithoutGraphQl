@@ -1,0 +1,110 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Proxies the `placeReview` method of the Hyvä `initReviewForm` component, so that it calls a
+ * regular Magento controller instead of the GraphQL endpoint.
+ *
+ * @see hyva-themes/magento2-default-theme/Magento_Review/templates/form.phtml
+ */
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Hyva\Theme\ViewModel\ReCaptcha;
+use Magento\Framework\Escaper;
+use Magento\Review\Block\Form;
+use Yireo\HyvaWithoutGraphQl\ViewModel\Endpoints;
+
+/** @var Form $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+/** @var Endpoints $endpoints */
+$endpoints = $viewModels->require(Endpoints::class);
+
+$formId = 'review_form';
+
+/** @var ReCaptcha|null $recaptcha */
+$recaptcha = $block->getData('viewModelRecaptcha');
+$recaptchaFieldName = $recaptcha ? $recaptcha->getResultTokenFieldName($formId) : '';
+
+$productSku = $block->getProductInfo() ? (string)$block->getProductInfo()->getSku() : '';
+?>
+<script>
+    (function () {
+        const original = window.initReviewForm;
+
+        if (typeof original !== 'function') {
+            return;
+        }
+
+        const endpoint = '<?= $escaper->escapeJs($endpoints->getSaveReviewUrl()) ?>';
+        const formId = '<?= $escaper->escapeJs($formId) ?>';
+        const productSku = '<?= $escaper->escapeJs($productSku) ?>';
+        const recaptchaFieldName = '<?= $escaper->escapeJs($recaptchaFieldName) ?>';
+        const genericError = '<?= $escaper->escapeJs(__('Submitting your review failed, please try again.')) ?>';
+
+        window.initReviewForm = function (...args) {
+            const component = original.apply(this, args);
+
+            component.placeReview = function () {
+                this.isLoading = true;
+                this.displayErrorMessage = false;
+
+                const form = document.querySelector('#' + formId);
+                const body = new FormData();
+
+                body.append('form_key', hyva.getFormKey());
+                body.append('sku', productSku);
+                body.append('nickname', this.nickname);
+                body.append('summary', this.summary);
+                body.append('text', this.review);
+
+                Object.keys(this.ratings).forEach((ratingId) => {
+                    body.append('ratings[' + ratingId + ']', atob(this.ratings[ratingId]));
+                });
+
+                if (recaptchaFieldName && form && form.elements[recaptchaFieldName]) {
+                    body.append('g-recaptcha-response', form.elements[recaptchaFieldName].value);
+                }
+
+                return fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include',
+                    body: body
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data && data.success) {
+                            this.displaySuccessMessage = true;
+                            return;
+                        }
+
+                        this.setErrorMessages((data && data.messages && data.messages[0]) || genericError);
+                        this.displayErrorMessage = true;
+                    })
+                    .catch(() => {
+                        this.setErrorMessages(genericError);
+                        this.displayErrorMessage = true;
+                    })
+                    .finally(() => {
+                        this.isLoading = false;
+                    });
+            };
+
+            return component;
+        };
+
+        if (window.Alpine) {
+            window.Alpine.data('initReviewForm', window.initReviewForm);
+        }
+    })();
+</script>
+<?php if (isset($hyvaCsp)): ?>
+    <?php $hyvaCsp->registerInlineScript() ?>
+<?php endif; ?>

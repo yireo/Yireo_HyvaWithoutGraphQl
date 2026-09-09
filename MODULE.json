@@ -1,0 +1,12 @@
+{
+    "module_name": "Yireo_HyvaWithoutGraphQl",
+    "composer_name": "yireo/magento2-hyva-without-graph-ql",
+    "sequence": [
+        "Magento_Catalog",
+        "Magento_Config",
+        "Magento_Review",
+        "Magento_Theme"
+    ],
+    "phpstan_level": 5,
+    "phpcs_severity": 6
+}

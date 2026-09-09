@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\View\TemplateEngine\Php">
+        <plugin name="Yireo_HyvaWithoutGraphQl::swap_graphql_templates"
+                type="Yireo\HyvaWithoutGraphQl\Plugin\TemplateEngine\SwapGraphQlTemplates"
+                sortOrder="100"/>
+    </type>
+
+    <type name="Yireo\HyvaWithoutGraphQl\Plugin\TemplateEngine\SwapGraphQlTemplates">
+        <arguments>
+            <argument name="replaceTemplates" xsi:type="array">
+                <item name="product_slider" xsi:type="array">
+                    <item name="match" xsi:type="string">Magento_Theme/templates/elements/slider.phtml</item>
+                    <item name="template" xsi:type="string">Yireo_HyvaWithoutGraphQl::elements/slider.phtml</item>
+                </item>
+            </argument>
+            <argument name="appendTemplates" xsi:type="array">
+                <item name="customer_review_list" xsi:type="array">
+                    <item name="match" xsi:type="string">Magento_Review/templates/customer/list.phtml</item>
+                    <item name="template" xsi:type="string">Yireo_HyvaWithoutGraphQl::proxy/review-list.phtml</item>
+                </item>
+                <item name="product_review_form" xsi:type="array">
+                    <item name="match" xsi:type="string">Magento_Review/templates/form.phtml</item>
+                    <item name="template" xsi:type="string">Yireo_HyvaWithoutGraphQl::proxy/review-form.phtml</item>
+                </item>
+                <item name="recently_viewed_products" xsi:type="array">
+                    <item name="match" xsi:type="string">Magento_Catalog/templates/product/widget/viewed/js/recently-viewed-products.phtml</item>
+                    <item name="template" xsi:type="string">Yireo_HyvaWithoutGraphQl::proxy/recently-viewed-products.phtml</item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+</config>

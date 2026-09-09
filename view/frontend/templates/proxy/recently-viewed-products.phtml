@@ -1,0 +1,80 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Proxies the `fetchProducts` method of the Hyvä `initRecentlyViewedProductsComponent` component,
+ * so that it calls a regular Magento controller instead of the GraphQL endpoint.
+ *
+ * @see hyva-themes/magento2-default-theme/Magento_Catalog/templates/product/widget/viewed/js/recently-viewed-products.phtml
+ */
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Yireo\HyvaWithoutGraphQl\ViewModel\Endpoints;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+/** @var Endpoints $endpoints */
+$endpoints = $viewModels->require(Endpoints::class);
+?>
+<script>
+    (function () {
+        const original = window.initRecentlyViewedProductsComponent;
+
+        if (typeof original !== 'function') {
+            return;
+        }
+
+        const endpoint = '<?= $escaper->escapeJs($endpoints->getProductsBySkusUrl()) ?>';
+
+        window.initRecentlyViewedProductsComponent = function (...args) {
+            const component = original.apply(this, args);
+
+            component.fetchProducts = function (itemsToShow) {
+                const skus = (itemsToShow || [])
+                    .map((product) => product.sku)
+                    .filter((sku) => !!sku);
+
+                if (skus.length === 0) {
+                    this.renderRecentlyViewedProducts([]);
+                    return;
+                }
+
+                const url = new URL(endpoint);
+                url.searchParams.set('skus', skus.join(','));
+                url.searchParams.set('page_size', skus.length);
+
+                return window.fetch(url.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then((response) => response.json())
+                    .then((result) => this.renderRecentlyViewedProducts((result && result.items) || []))
+                    .catch(() => this.renderRecentlyViewedProducts([]))
+                    .finally(() => {
+                        this.loading = false;
+                    });
+            };
+
+            return component;
+        };
+
+        if (window.Alpine) {
+            window.Alpine.data(
+                'initRecentlyViewedProductsComponent',
+                window.initRecentlyViewedProductsComponent
+            );
+        }
+    })();
+</script>
+<?php if (isset($hyvaCsp)): ?>
+    <?php $hyvaCsp->registerInlineScript() ?>
+<?php endif; ?>

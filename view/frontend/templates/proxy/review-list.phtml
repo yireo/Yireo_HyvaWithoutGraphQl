@@ -1,0 +1,97 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Proxies the `getReviewsList` method of the Hyvä `initReviewList` component, so that it calls a
+ * regular Magento controller instead of the GraphQL endpoint.
+ *
+ * @see hyva-themes/magento2-default-theme/Magento_Review/templates/customer/list.phtml
+ */
+
+use Hyva\Theme\Model\ViewModelRegistry;
+use Hyva\Theme\ViewModel\HyvaCsp;
+use Magento\Framework\Escaper;
+use Magento\Framework\View\Element\Template;
+use Yireo\HyvaWithoutGraphQl\ViewModel\Endpoints;
+
+/** @var Template $block */
+/** @var Escaper $escaper */
+/** @var ViewModelRegistry $viewModels */
+/** @var HyvaCsp $hyvaCsp */
+
+/** @var Endpoints $endpoints */
+$endpoints = $viewModels->require(Endpoints::class);
+?>
+<script>
+    (function () {
+        const original = window.initReviewList;
+
+        if (typeof original !== 'function') {
+            return;
+        }
+
+        const endpoint = '<?= $escaper->escapeJs($endpoints->getCustomerReviewsUrl()) ?>';
+
+        window.initReviewList = function (...args) {
+            const component = original.apply(this, args);
+
+            <?php /* The original implementation waits for the GraphQL customer token. The session
+                     cookie is enough for a regular controller, so the token check is dropped. */ ?>
+            component.onPrivateContentLoaded = function () {
+                this.getReviewsList();
+            };
+
+            component.getReviewsList = function () {
+                this.isLoading = true;
+
+                const url = new URL(endpoint);
+                url.searchParams.set('current_page', this.currentPage);
+                url.searchParams.set('page_size', this.pageSize);
+
+                return fetch(url.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'include'
+                })
+                    .then((response) => response.json().then((data) => ({status: response.status, data: data})))
+                    .then((result) => {
+                        if (result.status === 401) {
+                            this.reviews = [];
+                            this.pageInfo = {};
+                            this.totalPagesObject = {};
+                            return;
+                        }
+
+                        if (result.data && result.data.success === false) {
+                            this.initErrorMessages(
+                                (result.data.messages || []).map((message) => ({message: message}))
+                            );
+                            return;
+                        }
+
+                        this.reviews = (result.data && result.data.items) || [];
+                        this.pageInfo = (result.data && result.data.page_info) || {};
+                        this.totalPagesObject = this.pageInfo.total_pages
+                            ? Array.from({length: this.pageInfo.total_pages}, (value, index) => index + 1)
+                            : {};
+                    })
+                    .catch((error) => this.initErrorMessages([{message: error.toString()}]))
+                    .finally(() => {
+                        this.isLoading = false;
+                    });
+            };
+
+            return component;
+        };
+
+        if (window.Alpine) {
+            window.Alpine.data('initReviewList', window.initReviewList);
+        }
+    })();
+</script>
+<?php if (isset($hyvaCsp)): ?>
+    <?php $hyvaCsp->registerInlineScript() ?>
+<?php endif; ?>
