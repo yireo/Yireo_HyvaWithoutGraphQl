@@ -94,7 +94,10 @@ class ProductProvider
 
         $collection->addAttributeToSort((string)$params['sort_attribute'], (string)$params['sort_direction']);
 
-        return array_values($collection->getItems());
+        /** @var Product[] $items */
+        $items = $collection->getItems();
+
+        return array_values($items);
     }
 
     /**
@@ -147,7 +150,7 @@ class ProductProvider
         $collection->addFinalPrice();
         $collection->addTaxPercents();
         $collection->addUrlRewrite();
-        $collection->addAttributeToFilter('status', Status::STATUS_ENABLED);
+        $collection->addAttributeToFilter('status', ['eq' => Status::STATUS_ENABLED]);
         $collection->setVisibility($this->visibility->getVisibleInCatalogIds());
 
         return $collection;

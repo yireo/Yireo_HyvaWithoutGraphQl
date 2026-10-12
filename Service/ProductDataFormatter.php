@@ -9,6 +9,7 @@ use Magento\Catalog\Pricing\Price\FinalPrice;
 use Magento\Catalog\Pricing\Price\RegularPrice;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 
 /**
@@ -104,6 +105,11 @@ class ProductDataFormatter
 
     private function getCurrencyCode(): string
     {
-        return (string)$this->storeManager->getStore()->getCurrentCurrencyCode();
+        $store = $this->storeManager->getStore();
+        if (!$store instanceof Store) {
+            return '';
+        }
+
+        return (string)$store->getCurrentCurrencyCode();
     }
 }

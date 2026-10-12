@@ -5,6 +5,7 @@ namespace Yireo\HyvaWithoutGraphQl\Test\Integration\Controller\Reviews;
 
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\App\Response\Http as HttpResponse;
 use Magento\TestFramework\Helper\Bootstrap;
 use Magento\TestFramework\TestCase\AbstractController;
 
@@ -15,12 +16,16 @@ class CustomerTest extends AbstractController
 {
     public function testGuestIsRejected(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_GET);
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
         $this->dispatch('hyva-without-graphql/reviews/customer');
 
-        $this->assertSame(401, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(401, $response->getHttpResponseCode());
 
-        $data = json_decode($this->getResponse()->getBody(), true);
+        $data = json_decode($response->getBody(), true);
         $this->assertFalse($data['success']);
     }
 
@@ -31,12 +36,16 @@ class CustomerTest extends AbstractController
     {
         Bootstrap::getObjectManager()->get(CustomerSession::class)->setCustomerId(1);
 
-        $this->getRequest()->setMethod(HttpRequest::METHOD_GET);
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
         $this->dispatch('hyva-without-graphql/reviews/customer');
 
-        $this->assertSame(200, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(200, $response->getHttpResponseCode());
 
-        $data = json_decode($this->getResponse()->getBody(), true);
+        $data = json_decode($response->getBody(), true);
         $this->assertSame([], $data['items']);
         $this->assertSame(5, $data['page_info']['page_size']);
         $this->assertSame(1, $data['page_info']['current_page']);
@@ -49,11 +58,15 @@ class CustomerTest extends AbstractController
     {
         Bootstrap::getObjectManager()->get(CustomerSession::class)->setCustomerId(1);
 
-        $this->getRequest()->setMethod(HttpRequest::METHOD_GET);
-        $this->getRequest()->setParams(['page_size' => '9999']);
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
+        $request->setParams(['page_size' => '9999']);
         $this->dispatch('hyva-without-graphql/reviews/customer');
 
-        $data = json_decode($this->getResponse()->getBody(), true);
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $data = json_decode($response->getBody(), true);
         $this->assertSame(50, $data['page_info']['page_size']);
     }
 

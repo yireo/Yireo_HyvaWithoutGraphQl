@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Yireo\HyvaWithoutGraphQl\Test\Integration\Controller\Reviews;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\App\Response\Http as HttpResponse;
 use Magento\Framework\Data\Form\FormKey;
 use Magento\Review\Model\ResourceModel\Review\CollectionFactory as ReviewCollectionFactory;
 use Magento\Review\Model\Review;
@@ -17,13 +18,17 @@ class SaveTest extends AbstractController
 {
     public function testMissingFormKeyIsRejected(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue(['sku' => 'simple']);
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_POST);
+        $request->setPostValue(['sku' => 'simple']);
         $this->dispatch('hyva-without-graphql/reviews/save');
 
-        $this->assertSame(403, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(403, $response->getHttpResponseCode());
 
-        $data = json_decode($this->getResponse()->getBody(), true);
+        $data = json_decode($response->getBody(), true);
         $this->assertFalse($data['success']);
     }
 
@@ -33,8 +38,10 @@ class SaveTest extends AbstractController
      */
     public function testUnknownSkuIsRejected(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue([
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_POST);
+        $request->setPostValue([
             'form_key' => $this->getFormKey(),
             'sku' => 'does-not-exist',
             'nickname' => 'Tester',
@@ -43,9 +50,11 @@ class SaveTest extends AbstractController
         ]);
         $this->dispatch('hyva-without-graphql/reviews/save');
 
-        $this->assertSame(400, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(400, $response->getHttpResponseCode());
 
-        $data = json_decode($this->getResponse()->getBody(), true);
+        $data = json_decode($response->getBody(), true);
         $this->assertFalse($data['success']);
         $this->assertStringContainsString('product', strtolower($data['messages'][0]));
     }
@@ -57,8 +66,10 @@ class SaveTest extends AbstractController
      */
     public function testGuestReviewIsStoredAsPending(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue([
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_POST);
+        $request->setPostValue([
             'form_key' => $this->getFormKey(),
             'sku' => 'simple',
             'nickname' => 'Integration Tester',
@@ -67,9 +78,11 @@ class SaveTest extends AbstractController
         ]);
         $this->dispatch('hyva-without-graphql/reviews/save');
 
-        $this->assertSame(200, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(200, $response->getHttpResponseCode());
 
-        $data = json_decode($this->getResponse()->getBody(), true);
+        $data = json_decode($response->getBody(), true);
         $this->assertTrue($data['success']);
 
         $collection = Bootstrap::getObjectManager()->get(ReviewCollectionFactory::class)->create();
@@ -87,8 +100,10 @@ class SaveTest extends AbstractController
      */
     public function testDisabledReviewsAreRejected(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_POST);
-        $this->getRequest()->setPostValue([
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_POST);
+        $request->setPostValue([
             'form_key' => $this->getFormKey(),
             'sku' => 'simple',
             'nickname' => 'Integration Tester',
@@ -97,7 +112,9 @@ class SaveTest extends AbstractController
         ]);
         $this->dispatch('hyva-without-graphql/reviews/save');
 
-        $this->assertSame(400, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(400, $response->getHttpResponseCode());
     }
 
     private function getFormKey(): string

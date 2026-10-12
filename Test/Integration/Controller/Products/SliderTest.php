@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Yireo\HyvaWithoutGraphQl\Test\Integration\Controller\Products;
 
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\App\Response\Http as HttpResponse;
 use Magento\TestFramework\TestCase\AbstractController;
 
 /**
@@ -16,13 +17,17 @@ class SliderTest extends AbstractController
      */
     public function testSkuFilterReturnsMatchingProduct(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_GET);
-        $this->getRequest()->setParams(['skus' => 'simple', 'page_size' => '4']);
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
+        $request->setParams(['skus' => 'simple', 'page_size' => '4']);
         $this->dispatch('hyva-without-graphql/products/slider');
 
-        $this->assertSame(200, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(200, $response->getHttpResponseCode());
 
-        $data = json_decode($this->getResponse()->getBody(), true);
+        $data = json_decode($response->getBody(), true);
         $this->assertSame(['simple'], array_column($data['items'], 'sku'));
     }
 
@@ -31,13 +36,17 @@ class SliderTest extends AbstractController
      */
     public function testPageSizeIsCapped(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_GET);
-        $this->getRequest()->setParams(['page_size' => '99999']);
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
+        $request->setParams(['page_size' => '99999']);
         $this->dispatch('hyva-without-graphql/products/slider');
 
-        $this->assertSame(200, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(200, $response->getHttpResponseCode());
 
-        $data = json_decode($this->getResponse()->getBody(), true);
+        $data = json_decode($response->getBody(), true);
         $this->assertLessThanOrEqual(100, count($data['items']));
     }
 
@@ -48,11 +57,15 @@ class SliderTest extends AbstractController
      */
     public function testInvalidSortAttributeFallsBackToPosition(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_GET);
-        $this->getRequest()->setParams(['sort_attribute' => 'no_such_attribute', 'page_size' => '4']);
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
+        $request->setParams(['sort_attribute' => 'no_such_attribute', 'page_size' => '4']);
         $this->dispatch('hyva-without-graphql/products/slider');
 
-        $this->assertSame(200, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(200, $response->getHttpResponseCode());
     }
 
     /**
@@ -60,13 +73,17 @@ class SliderTest extends AbstractController
      */
     public function testUnknownCustomFilterIsIgnored(): void
     {
-        $this->getRequest()->setMethod(HttpRequest::METHOD_GET);
-        $this->getRequest()->setParams([
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
+        $request->setParams([
             'filters' => 'no_such_attribute: { eq: "whatever" }',
             'page_size' => '4',
         ]);
         $this->dispatch('hyva-without-graphql/products/slider');
 
-        $this->assertSame(200, $this->getResponse()->getHttpResponseCode());
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(200, $response->getHttpResponseCode());
     }
 }

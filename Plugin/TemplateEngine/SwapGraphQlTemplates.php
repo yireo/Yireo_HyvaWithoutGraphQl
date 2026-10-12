@@ -41,7 +41,7 @@ class SwapGraphQlTemplates
      * @param array<string, mixed> $dictionary
      * @return array{0: BlockInterface, 1: string, 2: array<string, mixed>}
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
     public function beforeRender(
         Php $subject,
@@ -74,7 +74,7 @@ class SwapGraphQlTemplates
      * @param array<string, mixed> $dictionary
      * @return string
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
     public function afterRender(
         Php $subject,
@@ -118,8 +118,8 @@ class SwapGraphQlTemplates
 
         $fileName = str_replace('\\', '/', $fileName);
         foreach ($templates as $candidate) {
-            $match = (string)($candidate['match'] ?? '');
-            $template = (string)($candidate['template'] ?? '');
+            $match = (string)$candidate['match'];
+            $template = (string)$candidate['template'];
             if ($match === '' || $template === '') {
                 continue;
             }
