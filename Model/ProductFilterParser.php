@@ -34,7 +34,7 @@ class ProductFilterParser
      */
     public function parse(string $filters): array
     {
-        if (trim($filters) === '') {
+        if (trim($filters, " \f\n\r\t\v\x00") === '') {
             return [];
         }
 
@@ -93,7 +93,7 @@ class ProductFilterParser
      */
     private function parseValue(string $value): string|array|null
     {
-        $value = trim($value);
+        $value = trim($value, " \f\n\r\t\v\x00");
         if ($value === '') {
             return null;
         }
@@ -116,7 +116,7 @@ class ProductFilterParser
 
     private function unquote(string $value): string
     {
-        $value = trim($value);
+        $value = trim($value, " \f\n\r\t\v\x00");
         if (strlen($value) > 1 && ($value[0] === '"' || $value[0] === "'") && $value[0] === substr($value, -1)) {
             return substr($value, 1, -1);
         }

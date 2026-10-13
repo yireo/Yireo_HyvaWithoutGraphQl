@@ -56,9 +56,9 @@ class Save implements HttpPostActionInterface, CsrfAwareActionInterface
 
             $this->reviewSaver->save(
                 (string)$this->request->getParam('sku', ''),
-                trim((string)$this->request->getParam('nickname', '')),
-                trim((string)$this->request->getParam('summary', '')),
-                trim((string)$this->request->getParam('text', '')),
+                trim((string)$this->request->getParam('nickname', ''), " \f\n\r\t\v\x00"),
+                trim((string)$this->request->getParam('summary', ''), " \f\n\r\t\v\x00"),
+                trim((string)$this->request->getParam('text', ''), " \f\n\r\t\v\x00"),
                 $this->getRatings()
             );
         } catch (LocalizedException $exception) {

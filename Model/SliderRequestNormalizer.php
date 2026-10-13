@@ -37,7 +37,7 @@ class SliderRequestNormalizer
             'sort_attribute' => $this->toSortAttribute($params['sort_attribute'] ?? null),
             'sort_direction' => $this->toSortDirection($params['sort_direction'] ?? null),
             'type' => $this->toType($params['type'] ?? null),
-            'filters' => is_string($params['filters'] ?? null) ? trim($params['filters']) : '',
+            'filters' => is_string($params['filters'] ?? null) ? trim($params['filters'], " \f\n\r\t\v\x00") : '',
         ];
     }
 
@@ -61,7 +61,7 @@ class SliderRequestNormalizer
                 continue;
             }
 
-            $item = trim((string)$item);
+            $item = trim((string)$item, " \f\n\r\t\v\x00");
             if ($item !== '') {
                 $values[] = $item;
             }
@@ -92,7 +92,7 @@ class SliderRequestNormalizer
             return null;
         }
 
-        $value = trim((string)$value);
+        $value = trim((string)$value, " \f\n\r\t\v\x00");
         if ($value === '' || !is_numeric($value)) {
             return null;
         }
