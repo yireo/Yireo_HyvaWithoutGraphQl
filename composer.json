@@ -4,6 +4,7 @@
     "description": "Replace the GraphQL calls of various Hyva templates with regular Magento controllers",
     "type": "magento2-module",
     "require": {
+        "ext-pcre": "*",
         "hyva-themes/magento2-theme-module": "^1.5",
         "magento/framework": "^103.0",
         "magento/module-backend": "^102.0",
@@ -16,7 +17,8 @@
         "magento/module-review": "^100.4",
         "magento/module-store": "^101.1",
         "php": "~8.1.0 || ~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
-        "phpunit/phpunit": "^10.5"
+        "phpunit/phpunit": "^10.5",
+        "psr/log": "^1.0 || ^2.0 || ^3.0"
     },
     "suggest": {
         "magento/module-re-captcha-ui": "Validate reCAPTCHA when submitting a product review",
