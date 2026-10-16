@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.1] - 16 October 2026
+### Fixed
+- Fix ACL path that breaks admin
+
 ### Added
 - Plugin `SwapGraphQlTemplates` on `Magento\Framework\View\TemplateEngine\Php` that replaces or
   extends Hyvä templates containing a GraphQL call.
