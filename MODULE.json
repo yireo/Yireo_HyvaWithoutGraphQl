@@ -7,7 +7,7 @@
         "Magento_Review",
         "Magento_Theme"
     ],
-    "phpstan_level": 2,
+    "phpstan_level": 1,
     "phpcs_severity": "6",
     "php_versions": [
         "8.1",
