@@ -6,6 +6,7 @@ namespace Yireo\HyvaWithoutGraphQl\Test\Integration\Controller\Reviews;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\App\Response\Http as HttpResponse;
 use Magento\Framework\Data\Form\FormKey;
+use Magento\Framework\Data\Form\FormKey\Validator as FormKeyValidator;
 use Magento\Review\Model\ResourceModel\Review\CollectionFactory as ReviewCollectionFactory;
 use Magento\Review\Model\Review;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -16,8 +17,21 @@ use Magento\TestFramework\TestCase\AbstractController;
  */
 class SaveTest extends AbstractController
 {
-    public function testMissingFormKeyIsRejected(): void
+    protected function tearDown(): void
     {
+        $this->_objectManager->removeSharedInstance(FormKeyValidator::class);
+        parent::tearDown();
+    }
+
+    /**
+     * The test framework always injects a valid form key into POST requests, so the validator is stubbed.
+     */
+    public function testInvalidFormKeyIsRejected(): void
+    {
+        $formKeyValidator = $this->createMock(FormKeyValidator::class);
+        $formKeyValidator->method('validate')->willReturn(false);
+        $this->_objectManager->addSharedInstance($formKeyValidator, FormKeyValidator::class);
+
         /** @var HttpRequest $request */
         $request = $this->getRequest();
         $request->setMethod(HttpRequest::METHOD_POST);

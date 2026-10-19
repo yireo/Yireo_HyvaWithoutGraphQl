@@ -14,6 +14,9 @@ use Magento\TestFramework\TestCase\AbstractController;
 class SkusTest extends AbstractController
 {
     /**
+     * The price index is only updated after a committed transaction, so DB isolation is disabled.
+     *
+     * @magentoDbIsolation disabled
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      */
     public function testKnownSkuIsReturnedInGraphQlShape(): void

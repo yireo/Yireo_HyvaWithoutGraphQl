@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Yireo\HyvaWithoutGraphQl\Test\Integration\Plugin\TemplateEngine;
 
+use Magento\Framework\Component\ComponentRegistrar;
+use Magento\Framework\Component\ComponentRegistrarInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\TemplateEngine\Php;
 use Magento\TestFramework\Helper\Bootstrap;
@@ -27,9 +29,12 @@ class SwapGraphQlTemplatesTest extends TestCase
             '/theme/Magento_Theme/templates/elements/slider.phtml'
         );
 
-        $this->assertStringEndsWith(
-            'Yireo/HyvaWithoutGraphQl/view/frontend/templates/elements/slider.phtml',
-            str_replace('\\', '/', $result[1])
+        $modulePath = $objectManager->get(ComponentRegistrarInterface::class)
+            ->getPath(ComponentRegistrar::MODULE, 'Yireo_HyvaWithoutGraphQl');
+        $this->assertFileExists($result[1]);
+        $this->assertSame(
+            realpath($modulePath . '/view/frontend/templates/elements/slider.phtml'),
+            realpath($result[1])
         );
     }
 

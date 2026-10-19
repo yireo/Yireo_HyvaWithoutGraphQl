@@ -13,6 +13,9 @@ use Magento\TestFramework\TestCase\AbstractController;
 class SliderTest extends AbstractController
 {
     /**
+     * The price index is only updated after a committed transaction, so DB isolation is disabled.
+     *
+     * @magentoDbIsolation disabled
      * @magentoDataFixture Magento/Catalog/_files/product_simple.php
      */
     public function testSkuFilterReturnsMatchingProduct(): void
