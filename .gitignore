@@ -1,3 +1,9 @@
-.gitlab-ci-local
+.gitlab-ci-local/
 .playwright/
 .opencode/
+.php-cs-fixer.cache
+.phpunit.result.cache
+.ai/
+node_modules/
+.yireo-extension-builder.json
+MEMORY.md
