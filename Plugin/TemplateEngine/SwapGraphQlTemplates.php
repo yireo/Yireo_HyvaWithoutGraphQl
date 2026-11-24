@@ -84,16 +84,16 @@ class SwapGraphQlTemplates
         array $dictionary = []
     ): string {
         $result = (string)$result;
-        if (!$block instanceof Template || !$this->config->isEnabled()) {
-            return $result;
-        }
-
-        if (stripos($result, self::GRAPHQL_MARKER) === false) {
+        if (!$block instanceof Template) {
             return $result;
         }
 
         $template = $this->matchTemplate($this->appendTemplates, (string)$fileName);
-        if ($template === null) {
+        if ($template === null || !$this->config->isEnabled()) {
+            return $result;
+        }
+
+        if (stripos($result, self::GRAPHQL_MARKER) === false) {
             return $result;
         }
 
@@ -116,15 +116,15 @@ class SwapGraphQlTemplates
             return null;
         }
 
-        $fileName = str_replace('\\', '/', $fileName);
+        $fileName = '/' . ltrim(str_replace('\\', '/', $fileName), '/');
         foreach ($templates as $candidate) {
-            $match = (string)$candidate['match'];
+            $match = ltrim(str_replace('\\', '/', (string)$candidate['match']), '/');
             $template = (string)$candidate['template'];
             if ($match === '' || $template === '') {
                 continue;
             }
 
-            if (str_ends_with($fileName, $match)) {
+            if (str_ends_with($fileName, '/' . $match)) {
                 return $template;
             }
         }

@@ -206,6 +206,69 @@ class SwapGraphQlTemplatesTest extends TestCase
         $this->assertSame('<script>graphql</script>', $result);
     }
 
+    public function testBeforeRenderRequiresPathBoundaryForMatch(): void
+    {
+        $block = $this->createMock(BlockInterface::class);
+        $this->config->method('isEnabled')->willReturn(true);
+        $this->viewFileSystem->expects($this->never())->method('getTemplateFileName');
+
+        $fileName = '/vendor/evil/theme/Evil_Magento_Theme/templates/elements/slider.phtml';
+        $result = $this->createPlugin()->beforeRender($this->subject, $block, $fileName);
+
+        $this->assertSame($fileName, $result[1]);
+    }
+
+    public function testBeforeRenderMatchesWindowsPath(): void
+    {
+        $block = $this->createMock(BlockInterface::class);
+        $this->config->method('isEnabled')->willReturn(true);
+        $this->viewFileSystem->method('getTemplateFileName')->willReturn('/replacement.phtml');
+
+        $result = $this->createPlugin()->beforeRender(
+            $this->subject,
+            $block,
+            'C:\\theme\\Magento_Theme\\templates\\elements\\slider.phtml'
+        );
+
+        $this->assertSame('/replacement.phtml', $result[1]);
+    }
+
+    public function testAfterRenderRequiresPathBoundaryForMatch(): void
+    {
+        $this->config->method('isEnabled')->willReturn(true);
+
+        $block = $this->createMock(Template::class);
+        $block->expects($this->never())->method('getTemplateFile');
+        $block->expects($this->never())->method('fetchView');
+
+        $result = $this->createPlugin()->afterRender(
+            $this->subject,
+            '<script>graphql</script>',
+            $block,
+            '/vendor/evil/theme/Evil_Magento_Review/templates/form.phtml'
+        );
+
+        $this->assertSame('<script>graphql</script>', $result);
+    }
+
+    public function testAfterRenderSkipsContentInspectionForUnknownTemplate(): void
+    {
+        $this->config->expects($this->never())->method('isEnabled');
+
+        $block = $this->createMock(Template::class);
+        $block->expects($this->never())->method('fetchView');
+        $block->expects($this->never())->method('getTemplateFile');
+
+        $result = $this->createPlugin()->afterRender(
+            $this->subject,
+            '<script>graphql</script>',
+            $block,
+            '/vendor/hyva-themes/theme/Magento_Review/templates/other.phtml'
+        );
+
+        $this->assertSame('<script>graphql</script>', $result);
+    }
+
     private function createPlugin(): SwapGraphQlTemplates
     {
         return new SwapGraphQlTemplates(
