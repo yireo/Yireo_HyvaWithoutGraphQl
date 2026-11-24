@@ -97,4 +97,69 @@ class ProductFilterParserTest extends TestCase
             $this->parser->parse('price: { from: 10 }')
         );
     }
+
+    public function testNumberOfAttributeFiltersIsCapped(): void
+    {
+        $filters = [];
+        for ($i = 1; $i <= 8; $i++) {
+            $filters[] = 'attr' . $i . ': { eq: "value" }';
+        }
+
+        $result = $this->parser->parse(implode(', ', $filters));
+
+        $this->assertCount(ProductFilterParser::MAX_ATTRIBUTE_FILTERS, $result);
+        $this->assertSame(['attr1', 'attr2', 'attr3', 'attr4', 'attr5'], array_keys($result));
+    }
+
+    public function testInListIsCapped(): void
+    {
+        $values = [];
+        for ($i = 1; $i <= 150; $i++) {
+            $values[] = '"v' . $i . '"';
+        }
+
+        $result = $this->parser->parse('color: { in: [' . implode(',', $values) . '] }');
+
+        $this->assertCount(ProductFilterParser::MAX_LIST_SIZE, $result['color']['in']);
+        $this->assertSame('v1', $result['color']['in'][0]);
+    }
+
+    public function testNinListIsCapped(): void
+    {
+        $values = [];
+        for ($i = 1; $i <= 150; $i++) {
+            $values[] = '"v' . $i . '"';
+        }
+
+        $result = $this->parser->parse('color: { nin: [' . implode(',', $values) . '] }');
+
+        $this->assertCount(ProductFilterParser::MAX_LIST_SIZE, $result['color']['nin']);
+    }
+
+    public function testShortMatchValueIsDropped(): void
+    {
+        $this->assertSame([], $this->parser->parse('name: { match: "ab" }'));
+    }
+
+    public function testWildcardOnlyLikeValueIsDropped(): void
+    {
+        $this->assertSame([], $this->parser->parse('name: { like: "%_%_ %" }'));
+        $this->assertSame([], $this->parser->parse('name: { like: "%a_b%" }'));
+    }
+
+    public function testLikeValueWithEnoughCharactersIsKept(): void
+    {
+        $this->assertSame(
+            ['name' => ['like' => '%bag%']],
+            $this->parser->parse('name: { like: "%bag%" }')
+        );
+    }
+
+    public function testShortLikeDoesNotDropOtherConditions(): void
+    {
+        $this->assertSame(
+            ['name' => ['eq' => 'Bag']],
+            $this->parser->parse('name: { like: "%a%", eq: "Bag" }')
+        );
+    }
 }

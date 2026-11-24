@@ -9,6 +9,10 @@ namespace Yireo\HyvaWithoutGraphQl\Model;
  */
 class ProductFilterParser
 {
+    public const MAX_ATTRIBUTE_FILTERS = 5;
+    public const MAX_LIST_SIZE = 100;
+    public const MIN_LIKE_CHARACTERS = 3;
+
     private const ATTRIBUTE_PATTERN = '/([a-zA-Z0-9_]+)\s*:\s*\{([^{}]*)\}/';
     private const CONDITION_PATTERN = '/([a-zA-Z_]+)\s*:\s*(\[[^\]]*\]|"[^"]*"|\'[^\']*\'|[^,}\s]+)/';
     private const VALUE_PATTERN = '/"([^"]*)"|\'([^\']*)\'|([^,\[\]\s]+)/';
@@ -49,6 +53,10 @@ class ProductFilterParser
                 continue;
             }
 
+            if (count($parsed) >= self::MAX_ATTRIBUTE_FILTERS && !isset($parsed[$match[1]])) {
+                break;
+            }
+
             $parsed[$match[1]] = $conditions;
         }
 
@@ -77,14 +85,32 @@ class ProductFilterParser
                 continue;
             }
 
-            if ($operator === 'match' && is_string($value)) {
-                $value = '%' . $value . '%';
+            $condition = self::CONDITION_MAP[$operator];
+            if ($condition === 'like') {
+                if (!is_string($value) || !$this->hasEnoughLikeCharacters($value)) {
+                    continue;
+                }
+
+                if ($operator === 'match') {
+                    $value = '%' . $value . '%';
+                }
             }
 
-            $conditions[self::CONDITION_MAP[$operator]] = $value;
+            if (is_array($value)) {
+                $value = array_slice($value, 0, self::MAX_LIST_SIZE);
+            }
+
+            $conditions[$condition] = $value;
         }
 
         return $conditions;
+    }
+
+    private function hasEnoughLikeCharacters(string $value): bool
+    {
+        $characters = preg_replace('/[%_\s]+/u', '', $value);
+
+        return is_string($characters) && mb_strlen($characters) >= self::MIN_LIKE_CHARACTERS;
     }
 
     /**
