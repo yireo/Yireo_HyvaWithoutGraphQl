@@ -52,6 +52,37 @@ class SwapGraphQlTemplatesTest extends TestCase
         $this->assertSame('/theme/Magento_Theme/templates/html/header.phtml', $result[1]);
     }
 
+    public function testTemplateWithoutPathBoundaryIsUntouched(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $plugin = $objectManager->get(SwapGraphQlTemplates::class);
+
+        $fileName = '/theme/Evil_Magento_Theme/templates/elements/slider.phtml';
+        $result = $plugin->beforeRender(
+            $objectManager->get(Php::class),
+            $objectManager->create(Template::class),
+            $fileName
+        );
+
+        $this->assertSame($fileName, $result[1]);
+    }
+
+    public function testProxyTemplateIsNotAppendedWithoutPathBoundary(): void
+    {
+        $objectManager = Bootstrap::getObjectManager();
+        $plugin = $objectManager->get(SwapGraphQlTemplates::class);
+
+        $output = '<script>fetch(BASE_URL + "graphql")</script>';
+        $result = $plugin->afterRender(
+            $objectManager->get(Php::class),
+            $output,
+            $objectManager->create(Template::class),
+            '/theme/Evil_Magento_Review/templates/customer/list.phtml'
+        );
+
+        $this->assertSame($output, $result);
+    }
+
     /**
      * @dataProvider appendTemplateProvider
      */
