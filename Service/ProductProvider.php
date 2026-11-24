@@ -12,8 +12,11 @@ use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
+use Magento\Framework\DB\Sql\Expression;
+use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
+use Yireo\HyvaWithoutGraphQl\Model\FilterableAttributeAllowlist;
 use Yireo\HyvaWithoutGraphQl\Model\ProductFilterParser;
 
 /**
@@ -22,6 +25,8 @@ use Yireo\HyvaWithoutGraphQl\Model\ProductFilterParser;
  */
 class ProductProvider
 {
+    public const MAX_LINK_SOURCE_SKUS = 20;
+
     private const ADDITIONAL_ATTRIBUTES = [
         'name',
         'url_key',
@@ -40,6 +45,8 @@ class ProductProvider
         private readonly Visibility $visibility,
         private readonly ProductLinkManagementInterface $productLinkManagement,
         private readonly ProductFilterParser $productFilterParser,
+        private readonly FilterableAttributeAllowlist $filterableAttributeAllowlist,
+        private readonly StoreManagerInterface $storeManager,
         private readonly LoggerInterface $logger
     ) {
     }
@@ -57,6 +64,12 @@ class ProductProvider
 
         $collection = $this->createCollection();
         $collection->addAttributeToFilter('sku', ['in' => $skus]);
+        if ($limit > 0) {
+            $connection = $collection->getConnection();
+            $collection->getSelect()->order(new Expression($connection->quoteInto('FIELD(e.sku, ?)', $skus)));
+            $collection->setPageSize($limit);
+            $collection->setCurPage(1);
+        }
 
         $productsBySku = [];
         foreach ($collection as $product) {
@@ -88,7 +101,10 @@ class ProductProvider
         $collection->setCurPage(1);
 
         $this->applySkuFilter($collection, $params['skus']);
-        $this->applyCategoryFilter($collection, $params['category_ids']);
+        if (!$this->applyCategoryFilter($collection, $params['category_ids'])) {
+            return [];
+        }
+
         $this->applyPriceFilter($collection, $params['price_from'], $params['price_to']);
         $this->applyCustomFilters($collection, (string)$params['filters']);
 
@@ -106,8 +122,10 @@ class ProductProvider
      */
     private function getLinkedProducts(array $params): array
     {
+        $sourceSkus = $this->getExistingSkus(array_slice($params['skus'], 0, self::MAX_LINK_SOURCE_SKUS));
+
         $linkedSkus = [];
-        foreach ($params['skus'] as $sku) {
+        foreach ($sourceSkus as $sku) {
             foreach ($this->getLinkedSkus((string)$sku, (string)$params['type']) as $linkedSku) {
                 $linkedSkus[] = $linkedSku;
             }
@@ -129,9 +147,11 @@ class ProductProvider
         try {
             $links = $this->productLinkManagement->getLinkedItemsByType($sku, $type);
         } catch (Throwable $throwable) {
-            $this->logger->debug(
-                sprintf('Unable to load "%s" links for SKU "%s": %s', $type, $sku, $throwable->getMessage())
-            );
+            $this->logger->debug('Unable to load product links for slider', [
+                'type' => $type,
+                'sku' => $sku,
+                'exception' => $throwable->getMessage(),
+            ]);
 
             return [];
         }
@@ -141,17 +161,42 @@ class ProductProvider
         return array_map(static fn ($link): string => (string)$link->getLinkedProductSku(), $links);
     }
 
-    private function createCollection(): Collection
+    /**
+     * @param string[] $skus
+     * @return string[]
+     */
+    private function getExistingSkus(array $skus): array
+    {
+        if ($skus === []) {
+            return [];
+        }
+
+        $collection = $this->createBaseCollection();
+        $collection->addAttributeToFilter('sku', ['in' => $skus]);
+        $existingSkus = array_map('strval', $collection->getColumnValues('sku'));
+
+        return array_values(array_intersect($skus, $existingSkus));
+    }
+
+    private function createBaseCollection(): Collection
     {
         $collection = $this->collectionFactory->create();
+        $collection->addStoreFilter();
+        $collection->addAttributeToFilter('status', ['eq' => Status::STATUS_ENABLED]);
+        $collection->setVisibility($this->visibility->getVisibleInCatalogIds());
+
+        return $collection;
+    }
+
+    private function createCollection(): Collection
+    {
+        $collection = $this->createBaseCollection();
         $collection->addAttributeToSelect($this->catalogConfig->getProductAttributes());
         $collection->addAttributeToSelect(self::ADDITIONAL_ATTRIBUTES);
         $collection->addMinimalPrice();
         $collection->addFinalPrice();
         $collection->addTaxPercents();
         $collection->addUrlRewrite();
-        $collection->addAttributeToFilter('status', ['eq' => Status::STATUS_ENABLED]);
-        $collection->setVisibility($this->visibility->getVisibleInCatalogIds());
 
         return $collection;
     }
@@ -171,31 +216,72 @@ class ProductProvider
     /**
      * @param Collection $collection
      * @param int[] $categoryIds
-     * @return void
+     * @return bool False when categories were requested but none of them may be shown
      */
-    private function applyCategoryFilter(Collection $collection, array $categoryIds): void
+    private function applyCategoryFilter(Collection $collection, array $categoryIds): bool
     {
         if ($categoryIds === []) {
-            return;
+            return true;
         }
 
-        if (count($categoryIds) > 1) {
-            $collection->addCategoriesFilter(['in' => $categoryIds]);
-
-            return;
+        $categories = $this->getVisibleCategories($categoryIds);
+        if ($categories === []) {
+            return false;
         }
 
+        if (count($categories) > 1) {
+            $collection->addCategoriesFilter(['in' => array_keys($categories)]);
+
+            return true;
+        }
+
+        $collection->addCategoryFilter(reset($categories));
+
+        return true;
+    }
+
+    /**
+     * @param int[] $categoryIds
+     * @return array<int, Category>
+     */
+    private function getVisibleCategories(array $categoryIds): array
+    {
         try {
-            $category = $this->categoryRepository->get((int)reset($categoryIds));
+            $store = $this->storeManager->getStore();
         } catch (Throwable $throwable) {
-            $this->logger->debug('Unable to load slider category: ' . $throwable->getMessage());
+            $this->logger->debug('Unable to load store for slider categories', [
+                'exception' => $throwable->getMessage(),
+            ]);
 
-            return;
+            return [];
         }
 
-        if ($category instanceof Category) {
-            $collection->addCategoryFilter($category);
+        $rootCategoryId = (string)$store->getRootCategoryId();
+        $categories = [];
+        foreach ($categoryIds as $categoryId) {
+            try {
+                $category = $this->categoryRepository->get($categoryId, (int)$store->getId());
+            } catch (Throwable $throwable) {
+                $this->logger->debug('Unable to load slider category', [
+                    'category_id' => $categoryId,
+                    'exception' => $throwable->getMessage(),
+                ]);
+
+                continue;
+            }
+
+            if (!$category instanceof Category || !$category->getIsActive()) {
+                continue;
+            }
+
+            if (!in_array($rootCategoryId, explode('/', (string)$category->getPath()), true)) {
+                continue;
+            }
+
+            $categories[(int)$category->getId()] = $category;
         }
+
+        return $categories;
     }
 
     private function applyPriceFilter(Collection $collection, ?float $priceFrom, ?float $priceTo): void
@@ -217,12 +303,21 @@ class ProductProvider
     private function applyCustomFilters(Collection $collection, string $filters): void
     {
         foreach ($this->productFilterParser->parse($filters) as $attributeCode => $condition) {
+            if (!$this->filterableAttributeAllowlist->isAllowed($attributeCode)) {
+                $this->logger->debug('Ignoring slider filter on non-filterable attribute', [
+                    'attribute' => $attributeCode,
+                ]);
+
+                continue;
+            }
+
             try {
                 $collection->addAttributeToFilter($attributeCode, $condition);
             } catch (Throwable $throwable) {
-                $this->logger->debug(
-                    sprintf('Unable to filter on attribute "%s": %s', $attributeCode, $throwable->getMessage())
-                );
+                $this->logger->debug('Unable to filter slider on attribute', [
+                    'attribute' => $attributeCode,
+                    'exception' => $throwable->getMessage(),
+                ]);
             }
         }
     }
