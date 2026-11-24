@@ -3,22 +3,23 @@ declare(strict_types=1);
 
 namespace Yireo\HyvaWithoutGraphQl\ViewModel;
 
-use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\View\Element\Block\ArgumentInterface;
 use Magento\Framework\View\Element\Template;
-use Throwable;
 use Yireo\HyvaWithoutGraphQl\Model\SliderRequestNormalizer;
+use Yireo\HyvaWithoutGraphQl\Model\SliderSignature;
 
 /**
  * Translates the block arguments of a Hyvä product slider into the query parameters of the slider
  * controller. This mirrors the parameter handling that used to be inlined in the original
- * `Magento_Theme::elements/slider.phtml` template.
+ * `Magento_Theme::elements/slider.phtml` template. The parameters are signed, so that the slider
+ * controller only accepts parameter sets rendered by the store itself. Cross-sell sliders send no
+ * SKUs: the controller reads them from the cart of the current session.
  */
 class SliderParameters implements ArgumentInterface
 {
     public function __construct(
-        private readonly CheckoutSession $checkoutSession,
-        private readonly SliderRequestNormalizer $sliderRequestNormalizer
+        private readonly SliderRequestNormalizer $sliderRequestNormalizer,
+        private readonly SliderSignature $sliderSignature
     ) {
     }
 
@@ -43,7 +44,7 @@ class SliderParameters implements ArgumentInterface
             'filters' => (string)$block->getData('product_filters'),
         ]);
 
-        return [
+        $requestParameters = [
             'skus' => implode(',', $parameters['skus']),
             'category_ids' => implode(',', $parameters['category_ids']),
             'price_from' => $parameters['price_from'] === null ? '' : (string)$parameters['price_from'],
@@ -54,6 +55,10 @@ class SliderParameters implements ArgumentInterface
             'type' => $parameters['type'],
             'filters' => $parameters['filters'],
         ];
+
+        $requestParameters[SliderSignature::SIGNATURE_PARAMETER] = $this->sliderSignature->sign($requestParameters);
+
+        return $requestParameters;
     }
 
     private function getSkus(Template $block, string $type): string
@@ -63,7 +68,7 @@ class SliderParameters implements ArgumentInterface
         }
 
         if ($type === 'crosssell') {
-            return $this->getCartItemSkus();
+            return '';
         }
 
         $product = $block->getData('product');
@@ -72,21 +77,5 @@ class SliderParameters implements ArgumentInterface
         }
 
         return $product ? (string)$product->getSku() : '';
-    }
-
-    private function getCartItemSkus(): string
-    {
-        try {
-            $items = $this->checkoutSession->getQuote()->getAllVisibleItems();
-        } catch (Throwable) {
-            return '';
-        }
-
-        $skus = [];
-        foreach ($items as $item) {
-            $skus[] = (string)$item->getSku();
-        }
-
-        return implode(',', $skus);
     }
 }
