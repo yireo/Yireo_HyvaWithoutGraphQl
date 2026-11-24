@@ -52,6 +52,13 @@ if ($title) {
 ?>
 <script>
     function initSliderComponent<?= /** @noEscape */ $uniqueId ?>() {
+        const escapeHtml = (value) => String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
         return {
             active: 0,
             products: [],
@@ -115,16 +122,16 @@ if ($title) {
                             text: (response.success)
                                 ? "<?= $escaper->escapeJs(
                                     __("%1 has been added to your Wish List.", __("Product"))
-                                ) ?>" : response.error_message
+                                ) ?>" : escapeHtml(response.error_message || '')
                         }], 5000
                     );
                     const reloadCustomerDataEvent = new CustomEvent("reload-customer-section-data");
                     window.dispatchEvent(reloadCustomerDataEvent);
-                }).catch(function (error) {
+                }).catch(function () {
                     typeof window.dispatchMessages !== "undefined" && window.dispatchMessages(
                         [{
                             type: "error",
-                            text: error
+                            text: "<?= $escaper->escapeJs(__('Could not add item to wishlist.')) ?>"
                         }], 5000
                     );
                 });
@@ -145,11 +152,11 @@ if ($title) {
                     if (response.redirected) {
                         window.location.href = response.url;
                     }
-                }).catch(function (error) {
+                }).catch(function () {
                     typeof window.dispatchMessages !== "undefined" && window.dispatchMessages(
                         [{
                             type: "error",
-                            text: error
+                            text: "<?= $escaper->escapeJs(__('Could not add item to compare list.')) ?>"
                         }], 5000
                     );
                 });

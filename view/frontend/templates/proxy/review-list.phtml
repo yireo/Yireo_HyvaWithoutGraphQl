@@ -33,6 +33,12 @@ $endpoints = $viewModels->require(Endpoints::class);
         }
 
         const endpoint = '<?= $escaper->escapeJs($endpoints->getCustomerReviewsUrl()) ?>';
+        const escapeHtml = (value) => String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
 
         window.initReviewList = function (...args) {
             const component = original.apply(this, args);
@@ -69,7 +75,7 @@ $endpoints = $viewModels->require(Endpoints::class);
 
                         if (result.data && result.data.success === false) {
                             this.initErrorMessages(
-                                (result.data.messages || []).map((message) => ({message: message}))
+                                (result.data.messages || []).map((message) => ({message: escapeHtml(message)}))
                             );
                             return;
                         }
@@ -80,7 +86,9 @@ $endpoints = $viewModels->require(Endpoints::class);
                             ? Array.from({length: this.pageInfo.total_pages}, (value, index) => index + 1)
                             : {};
                     })
-                    .catch((error) => this.initErrorMessages([{message: error.toString()}]))
+                    .catch(() => this.initErrorMessages([{
+                        message: '<?= $escaper->escapeJs(__('Could not load your reviews.')) ?>'
+                    }]))
                     .finally(() => {
                         this.isLoading = false;
                     });
