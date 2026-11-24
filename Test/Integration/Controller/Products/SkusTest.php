@@ -46,6 +46,26 @@ class SkusTest extends AbstractController
         $this->assertArrayHasKey('currency', $item['price_range']['minimum_price']['final_price']);
     }
 
+    /**
+     * @magentoDbIsolation disabled
+     * @magentoDataFixture Magento/Catalog/_files/multiple_products.php
+     */
+    public function testPageSizeKeepsRequestedSkuOrder(): void
+    {
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
+        $request->setParams(['skus' => 'does-not-exist,simple3,simple2,simple1', 'page_size' => '1']);
+        $this->dispatch('hyva-without-graphql/products/skus');
+
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(200, $response->getHttpResponseCode());
+
+        $data = json_decode($response->getBody(), true);
+        $this->assertSame(['simple2'], array_column($data['items'], 'sku'));
+    }
+
     public function testUnknownSkuReturnsEmptyList(): void
     {
         /** @var HttpRequest $request */
