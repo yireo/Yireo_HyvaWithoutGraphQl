@@ -10,6 +10,7 @@ class SliderRequestNormalizer
 {
     public const MAX_PAGE_SIZE = 100;
     public const DEFAULT_PAGE_SIZE = 8;
+    public const MAX_CATEGORY_IDS = 20;
 
     public const LINK_TYPES = ['related', 'upsell', 'crosssell'];
 
@@ -29,8 +30,8 @@ class SliderRequestNormalizer
     public function normalize(array $params): array
     {
         return [
-            'skus' => $this->toStringList($params['skus'] ?? ''),
-            'category_ids' => $this->toIntList($params['category_ids'] ?? ''),
+            'skus' => array_slice($this->toStringList($params['skus'] ?? ''), 0, self::MAX_PAGE_SIZE),
+            'category_ids' => array_slice($this->toIntList($params['category_ids'] ?? ''), 0, self::MAX_CATEGORY_IDS),
             'price_from' => $this->toFloatOrNull($params['price_from'] ?? null),
             'price_to' => $this->toFloatOrNull($params['price_to'] ?? null),
             'page_size' => $this->toPageSize($params['page_size'] ?? null),

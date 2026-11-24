@@ -94,4 +94,24 @@ class SliderRequestNormalizerTest extends TestCase
         $this->assertSame(10.5, $result['price_from']);
         $this->assertNull($result['price_to']);
     }
+
+    public function testSkusAreCapped(): void
+    {
+        $skus = [];
+        for ($i = 1; $i <= 250; $i++) {
+            $skus[] = 'sku-' . $i;
+        }
+
+        $result = $this->normalizer->normalize(['skus' => implode(',', $skus)]);
+
+        $this->assertCount(SliderRequestNormalizer::MAX_PAGE_SIZE, $result['skus']);
+        $this->assertSame('sku-1', $result['skus'][0]);
+    }
+
+    public function testCategoryIdsAreCapped(): void
+    {
+        $result = $this->normalizer->normalize(['category_ids' => implode(',', range(1, 50))]);
+
+        $this->assertSame(range(1, SliderRequestNormalizer::MAX_CATEGORY_IDS), $result['category_ids']);
+    }
 }
