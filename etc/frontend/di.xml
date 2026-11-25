@@ -6,6 +6,12 @@
                 sortOrder="100"/>
     </type>
 
+    <type name="Yireo\HyvaWithoutGraphQl\Controller\Products\Slider">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+
     <type name="Yireo\HyvaWithoutGraphQl\Plugin\TemplateEngine\SwapGraphQlTemplates">
         <arguments>
             <argument name="replaceTemplates" xsi:type="array">

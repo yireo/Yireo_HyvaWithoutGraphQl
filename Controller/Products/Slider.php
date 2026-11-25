@@ -96,6 +96,6 @@ class Slider implements HttpGetActionInterface
             $skus[] = $sku !== '' ? $sku : (string)$item->getSku();
         }
 
-        return array_values(array_unique(array_filter($skus)));
+        return array_values(array_unique(array_filter($skus, static fn (string $sku): bool => $sku !== '')));
     }
 }
