@@ -12,6 +12,7 @@
         "magento/module-checkout": "^100.4",
         "magento/module-config": "^101.2",
         "magento/module-customer": "^103.0",
+        "magento/module-eav": "^102.1",
         "magento/module-re-captcha-ui": "^1.1",
         "magento/module-re-captcha-validation-api": "^1.1",
         "magento/module-review": "^100.4",
