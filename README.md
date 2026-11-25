@@ -74,11 +74,13 @@ left untouched and the controllers answer with a 404.
   answered with a generic message.
 - `reviews/customer` only ever returns the reviews of the customer in the current session.
 - The slider parameters travel over the URL and are signed with an HMAC-SHA256 signature (`sig`)
-  derived from the deployment crypt key. Unsigned or tampered requests get a 403.
-- Slider filters only apply to `sku`, `name`, `price`, `category_id` and to attributes that are
-  filterable, filterable in search or used for sorting. Other attributes are ignored. A request
-  can have at most 5 attribute filters and 100 `in`/`nin` values, and `like`/`match` values need
-  at least 3 characters that are not wildcards.
+  derived from the deployment crypt key. Unsigned or tampered requests get a 403. After rotating
+  the crypt key or changing the arguments of a slider block, flush the `block_html` and
+  `full_page` caches (and any CDN cache), otherwise cached pages keep sending outdated signatures.
+- Slider filters only apply to `sku`, `name`, `price` and to attributes that are filterable,
+  filterable in search or used for sorting. Other attributes are ignored. A request can have at
+  most 5 attribute filters and 100 `in`/`nin` values, and `like`/`match` values need at least 3
+  characters that are not wildcards. Categories are filtered through `category_ids`.
 - The page size is capped at 100, the number of SKUs at 100 and the number of category IDs at 20.
   The sort attribute is limited to a whitelist. Only active categories under the store root are
   used, and linked products are only resolved for up to 20 visible source products of the
