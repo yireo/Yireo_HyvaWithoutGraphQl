@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Yireo\HyvaWithoutGraphQl\Service;
 
-use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\ProductLinkManagementInterface;
 use Magento\Catalog\Model\Category;
 use Magento\Catalog\Model\Config as CatalogConfig;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Attribute\Source\Status;
 use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\DB\Sql\Expression;
@@ -42,7 +42,7 @@ class ProductProvider
     public function __construct(
         private readonly CollectionFactory $collectionFactory,
         private readonly CatalogConfig $catalogConfig,
-        private readonly CategoryRepositoryInterface $categoryRepository,
+        private readonly CategoryCollectionFactory $categoryCollectionFactory,
         private readonly Visibility $visibility,
         private readonly ProductLinkManagementInterface $productLinkManagement,
         private readonly ProductFilterParser $productFilterParser,
@@ -74,15 +74,18 @@ class ProductProvider
 
         $productsBySku = [];
         foreach ($collection as $product) {
-            $productsBySku[$product->getSku()] = $product;
+            $productsBySku[mb_strtolower((string)$product->getSku())] = $product;
         }
 
         $products = [];
         foreach ($skus as $sku) {
-            if (isset($productsBySku[$sku])) {
-                $products[] = $productsBySku[$sku];
+            $key = mb_strtolower($sku);
+            if (isset($productsBySku[$key])) {
+                $products[(int)$productsBySku[$key]->getId()] = $productsBySku[$key];
             }
         }
+
+        $products = array_values($products);
 
         return $limit > 0 ? array_slice($products, 0, $limit) : $products;
     }
@@ -230,7 +233,7 @@ class ProductProvider
             return false;
         }
 
-        if (count($categories) > 1) {
+        if (count($categoryIds) > 1) {
             $collection->addCategoriesFilter(['in' => array_keys($categories)]);
 
             return true;
@@ -261,25 +264,20 @@ class ProductProvider
             return [];
         }
 
-        $rootCategoryId = (string)$store->getRootCategoryId();
+        $rootPathSegment = '/' . (int)$store->getRootCategoryId() . '/';
+        $collection = $this->categoryCollectionFactory->create();
+        $collection->setStoreId((int)$store->getId());
+        $collection->addAttributeToSelect(['is_anchor', 'is_active']);
+        $collection->addIdFilter($categoryIds);
+        $collection->addIsActiveFilter();
+
         $categories = [];
-        foreach ($categoryIds as $categoryId) {
-            try {
-                $category = $this->categoryRepository->get($categoryId, (int)$store->getId());
-            } catch (Throwable $throwable) {
-                $this->logger->debug('Unable to load slider category', [
-                    'category_id' => $categoryId,
-                    'exception' => $throwable->getMessage(),
-                ]);
-
+        foreach ($collection as $category) {
+            if (!$category instanceof Category) {
                 continue;
             }
 
-            if (!$category instanceof Category || !$category->getIsActive()) {
-                continue;
-            }
-
-            if (!in_array($rootCategoryId, explode('/', (string)$category->getPath()), true)) {
+            if (!str_contains('/' . (string)$category->getPath() . '/', $rootPathSegment)) {
                 continue;
             }
 

@@ -66,6 +66,26 @@ class SkusTest extends AbstractController
         $this->assertSame(['simple2'], array_column($data['items'], 'sku'));
     }
 
+    /**
+     * @magentoDbIsolation disabled
+     * @magentoDataFixture Magento/Catalog/_files/multiple_products.php
+     */
+    public function testCaseMismatchedSkuDoesNotTakeAnEmptySlot(): void
+    {
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setMethod(HttpRequest::METHOD_GET);
+        $request->setParams(['skus' => 'SIMPLE2,simple1', 'page_size' => '1']);
+        $this->dispatch('hyva-without-graphql/products/skus');
+
+        /** @var HttpResponse $response */
+        $response = $this->getResponse();
+        $this->assertSame(200, $response->getHttpResponseCode());
+
+        $data = json_decode($response->getBody(), true);
+        $this->assertSame(['simple2'], array_column($data['items'], 'sku'));
+    }
+
     public function testUnknownSkuReturnsEmptyList(): void
     {
         /** @var HttpRequest $request */

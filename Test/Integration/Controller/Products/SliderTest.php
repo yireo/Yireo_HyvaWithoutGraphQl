@@ -199,6 +199,31 @@ class SliderTest extends AbstractController
 
     /**
      * @magentoDbIsolation disabled
+     * @magentoDataFixture Magento/Catalog/_files/category_anchor.php
+     */
+    public function testSingleAnchorCategoryIncludesChildCategoryProducts(): void
+    {
+        $skus = $this->dispatchSigned(['category_ids' => '22', 'page_size' => '4', 'sort_attribute' => 'sku']);
+        sort($skus);
+
+        $this->assertSame(['product_anchor_Product1', 'product_anchor_Product2'], $skus);
+    }
+
+    /**
+     * @magentoDbIsolation disabled
+     * @magentoDataFixture Magento/Catalog/_files/category_anchor.php
+     * @magentoDataFixture Magento/Catalog/_files/inactive_category.php
+     */
+    public function testRemovedCategoryKeepsMultiCategoryMode(): void
+    {
+        $this->assertSame(
+            ['product_anchor_Product2'],
+            $this->dispatchSigned(['category_ids' => '111,22', 'page_size' => '4'])
+        );
+    }
+
+    /**
+     * @magentoDbIsolation disabled
      * @magentoDataFixture Magento/Catalog/_files/category_product.php
      */
     public function testCategoryOutsideStoreRootReturnsNoProducts(): void
