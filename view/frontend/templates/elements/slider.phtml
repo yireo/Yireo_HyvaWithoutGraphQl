@@ -76,12 +76,24 @@ if ($title) {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
-                    .then((response) => response.json())
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error('Slider request failed with status ' + response.status);
+                        }
+
+                        return response.json();
+                    })
                     .then((data) => {
                         this.products = (data && data.items) || [];
                     })
                     .catch(() => {
                         this.products = [];
+                        typeof window.dispatchMessages !== "undefined" && window.dispatchMessages(
+                            [{
+                                type: "error",
+                                text: escapeHtml("<?= $escaper->escapeJs(__('Could not load products.')) ?>")
+                            }], 5000
+                        );
                     })
                     .finally(() => {
                         this.loading = false;
