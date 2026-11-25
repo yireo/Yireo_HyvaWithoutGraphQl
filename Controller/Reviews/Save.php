@@ -47,10 +47,10 @@ class Save implements HttpPostActionInterface, CsrfAwareActionInterface
             $this->reCaptchaValidator->validate($this->request, self::RECAPTCHA_KEY);
 
             $this->reviewSaver->save(
-                (string)$this->request->getParam('sku', ''),
-                trim((string)$this->request->getParam('nickname', ''), " \f\n\r\t\v\x00"),
-                trim((string)$this->request->getParam('summary', ''), " \f\n\r\t\v\x00"),
-                trim((string)$this->request->getParam('text', ''), " \f\n\r\t\v\x00"),
+                $this->getStringParam('sku'),
+                trim($this->getStringParam('nickname'), " \f\n\r\t\v\x00"),
+                trim($this->getStringParam('summary'), " \f\n\r\t\v\x00"),
+                trim($this->getStringParam('text'), " \f\n\r\t\v\x00"),
                 $this->getRatings()
             );
         } catch (ReviewInputException $exception) {
@@ -68,25 +68,54 @@ class Save implements HttpPostActionInterface, CsrfAwareActionInterface
     }
 
     /**
+     * @param string $name
+     * @return string
+     * @throws ReviewInputException
+     */
+    private function getStringParam(string $name): string
+    {
+        $value = $this->request->getParam($name, '');
+        if (!is_string($value)) {
+            throw new ReviewInputException(__('Please fill in all required fields.'));
+        }
+
+        return $value;
+    }
+
+    /**
      * @return array<int, int>
+     * @throws ReviewInputException
      */
     private function getRatings(): array
     {
         $ratings = $this->request->getParam('ratings', []);
-        if (!is_array($ratings)) {
+        if ($ratings === null || $ratings === '') {
             return [];
+        }
+
+        if (!is_array($ratings)) {
+            throw new ReviewInputException(__('The selected rating is not valid.'));
         }
 
         $validated = [];
         foreach ($ratings as $ratingId => $optionId) {
-            if (!is_numeric($ratingId) || !is_numeric($optionId)) {
-                continue;
+            if (!$this->isPositiveInteger($ratingId) || !$this->isPositiveInteger($optionId)) {
+                throw new ReviewInputException(__('The selected rating is not valid.'));
             }
 
             $validated[(int)$ratingId] = (int)$optionId;
         }
 
         return $validated;
+    }
+
+    private function isPositiveInteger(mixed $value): bool
+    {
+        if (is_int($value)) {
+            return $value > 0;
+        }
+
+        return is_string($value) && ctype_digit($value) && (int)$value > 0;
     }
 
     public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
@@ -98,6 +127,10 @@ class Save implements HttpPostActionInterface, CsrfAwareActionInterface
 
     public function validateForCsrf(RequestInterface $request): ?bool
     {
+        if (!is_string($request->getParam('form_key'))) {
+            return false;
+        }
+
         return $this->formKeyValidator->validate($request);
     }
 }
