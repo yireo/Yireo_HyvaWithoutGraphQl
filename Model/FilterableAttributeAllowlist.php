@@ -34,7 +34,7 @@ class FilterableAttributeAllowlist
             return false;
         }
 
-        if (!$attribute || !$attribute->getId()) {
+        if (!$attribute->getId()) {
             return false;
         }
 

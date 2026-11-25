@@ -92,8 +92,7 @@ class Slider implements HttpGetActionInterface
 
         $skus = [];
         foreach ($items as $item) {
-            $product = $item->getProduct();
-            $sku = $product ? (string)$product->getData('sku') : '';
+            $sku = (string)$item->getProduct()->getData('sku');
             $skus[] = $sku !== '' ? $sku : (string)$item->getSku();
         }
 

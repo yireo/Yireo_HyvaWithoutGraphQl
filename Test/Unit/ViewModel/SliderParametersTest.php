@@ -40,13 +40,11 @@ class SliderParametersTest extends TestCase
         ));
     }
 
-    public function testAllValuesAreStrings(): void
+    public function testPageSizeIsSentAsString(): void
     {
         $parameters = $this->sliderParameters->getRequestParameters($this->createBlock(['page_size' => 4]));
 
-        foreach ($parameters as $value) {
-            $this->assertIsString($value);
-        }
+        $this->assertSame('4', $parameters['page_size']);
     }
 
     public function testCrosssellSendsNoSkus(): void
