@@ -61,6 +61,70 @@ class SaveTest extends AbstractController
         $this->assertSame('Invalid Form Key. Please refresh the page.', $data['messages'][0]);
     }
 
+    public function testNonStringFormKeyIsRejected(): void
+    {
+        $reviewSaver = $this->createMock(ReviewSaver::class);
+        $reviewSaver->expects($this->never())->method('save');
+        $this->_objectManager->addSharedInstance($reviewSaver, ReviewSaver::class);
+
+        /** @var HttpRequest $request */
+        $request = $this->getRequest();
+        $request->setParam('form_key', ['invalid']);
+        $this->postReview($this->getReviewData());
+
+        $this->assertErrorResponse(403, 'Invalid Form Key. Please refresh the page.');
+    }
+
+    /**
+     * @magentoDataFixture Magento/Catalog/_files/product_simple.php
+     * @magentoDbIsolation enabled
+     * @magentoConfigFixture default_store catalog/review/active 1
+     * @magentoConfigFixture default_store catalog/review/allow_guest 1
+     */
+    public function testNonStringReviewFieldIsRejected(): void
+    {
+        $before = $this->countReviews();
+
+        $this->postReview(array_merge($this->getReviewData(), ['nickname' => ['Integration Tester']]));
+
+        $this->assertErrorResponse(400, 'Please fill in all required fields.');
+        $this->assertSame($before, $this->countReviews());
+    }
+
+    /**
+     * @magentoDataFixture Magento/Catalog/_files/product_simple.php
+     * @magentoDbIsolation enabled
+     * @magentoConfigFixture default_store catalog/review/active 1
+     * @magentoConfigFixture default_store catalog/review/allow_guest 1
+     * @dataProvider getMalformedRatings
+     * @param array<int|string, mixed>|string $ratings
+     */
+    public function testMalformedRatingIsRejected(array|string $ratings): void
+    {
+        $before = $this->countReviews();
+
+        $this->postReview($this->getReviewData() + ['ratings' => $ratings]);
+
+        $this->assertErrorResponse(400, 'The selected rating is not valid.');
+        $this->assertSame($before, $this->countReviews());
+    }
+
+    /**
+     * @return array<string, array{0: array<int|string, mixed>|string}>
+     */
+    public static function getMalformedRatings(): array
+    {
+        return [
+            'non-numeric rating ID' => [['abc' => '1']],
+            'negative rating ID' => [['-1' => '1']],
+            'zero rating ID' => [['0' => '1']],
+            'non-numeric option ID' => [['1' => 'abc']],
+            'negative option ID' => [['1' => '-1']],
+            'array option ID' => [['1' => ['1']]],
+            'non-array ratings' => ['1'],
+        ];
+    }
+
     /**
      * @magentoConfigFixture default_store catalog/review/active 1
      * @magentoConfigFixture default_store catalog/review/allow_guest 1
