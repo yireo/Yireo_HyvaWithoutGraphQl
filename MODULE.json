@@ -8,6 +8,7 @@
         "Magento_Checkout",
         "Magento_Config",
         "Magento_Customer",
+        "Magento_Eav",
         "Magento_ReCaptchaUi",
         "Magento_ReCaptchaValidationApi",
         "Magento_Review",
