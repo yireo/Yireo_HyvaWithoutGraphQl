@@ -88,6 +88,7 @@ class ReviewSaver
             ->setStores([$storeId]);
 
         $connection = $this->reviewResource->getConnection();
+        $entryLevel = $connection->getTransactionLevel();
         $connection->beginTransaction();
 
         try {
@@ -104,7 +105,10 @@ class ReviewSaver
             $review->aggregate();
             $connection->commit();
         } catch (Throwable $throwable) {
-            $connection->rollBack();
+            while ($connection->getTransactionLevel() > $entryLevel) {
+                $connection->rollBack();
+            }
+
             throw $throwable;
         }
     }
