@@ -117,8 +117,6 @@ class ReviewSaver
      */
     private function getProduct(string $sku, int $storeId): Product
     {
-        $this->eventManager->dispatch('review_controller_product_init_before', ['controller_action' => null]);
-
         try {
             $product = $this->productRepository->get($sku, false, $storeId);
         } catch (NoSuchEntityException) {
@@ -131,10 +129,6 @@ class ReviewSaver
 
         try {
             $this->eventManager->dispatch('review_controller_product_init', ['product' => $product]);
-            $this->eventManager->dispatch(
-                'review_controller_product_init_after',
-                ['product' => $product, 'controller_action' => null]
-            );
         } catch (LocalizedException) {
             throw $this->createProductNotFoundException();
         }
