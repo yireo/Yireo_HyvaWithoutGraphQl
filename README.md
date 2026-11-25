@@ -62,11 +62,29 @@ left untouched and the controllers answer with a 404.
 
 ### Security
 
-- `reviews/save` validates the Magento form key itself and answers with JSON instead of a redirect,
-  and validates reCAPTCHA for form id `product_review` when it is configured.
+- `reviews/save` validates the Magento form key in `validateForCsrf()` and answers an invalid form
+  key with a JSON 403 instead of a redirect. It validates reCAPTCHA for form id `product_review`
+  when that is configured.
+- Reviews can only be posted for products that are enabled, visible and assigned to the current
+  website. Every failure returns the same generic message.
+- Rating votes are checked against the active ratings of the current store. Each option must
+  belong to its rating, and all active ratings are required. The review, its votes and the
+  aggregation are saved in a single database transaction.
+- Only messages meant for the shopper are returned to the browser. Other errors are logged and
+  answered with a generic message.
 - `reviews/customer` only ever returns the reviews of the customer in the current session.
-- The slider parameters travel over the URL. The page size is capped at 100 and the sort attribute
-  is limited to a whitelist.
+- The slider parameters travel over the URL and are signed with an HMAC-SHA256 signature (`sig`)
+  derived from the deployment crypt key. Unsigned or tampered requests get a 403.
+- Slider filters only apply to `sku`, `name`, `price`, `category_id` and to attributes that are
+  filterable, filterable in search or used for sorting. Other attributes are ignored. A request
+  can have at most 5 attribute filters and 100 `in`/`nin` values, and `like`/`match` values need
+  at least 3 characters that are not wildcards.
+- The page size is capped at 100, the number of SKUs at 100 and the number of category IDs at 20.
+  The sort attribute is limited to a whitelist. Only active categories under the store root are
+  used, and linked products are only resolved for up to 20 visible source products of the
+  current website.
+- Cross-sell sliders read the SKUs from the cart in the session and ignore SKUs sent by the client.
+- Messages are HTML-escaped in the browser before they are shown.
 - All responses are sent with `Cache-Control: no-store`, since they depend on store, currency,
   customer group or customer session.
 
