@@ -5,13 +5,13 @@ namespace Yireo\HyvaWithoutGraphQl\Service;
 
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Exception\InputException;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\ReCaptchaUi\Model\CaptchaResponseResolverInterface;
 use Magento\ReCaptchaUi\Model\ErrorMessageConfigInterface;
 use Magento\ReCaptchaUi\Model\IsCaptchaEnabledInterface;
 use Magento\ReCaptchaUi\Model\ValidationConfigResolverInterface;
 use Magento\ReCaptchaValidationApi\Api\ValidatorInterface;
 use Psr\Log\LoggerInterface;
+use Yireo\HyvaWithoutGraphQl\Exception\ReviewInputException;
 
 /**
  * Validates a reCAPTCHA token, but throws an exception instead of redirecting, so that the outcome
@@ -33,7 +33,7 @@ class ReCaptchaValidator
      * @param RequestInterface $request
      * @param string $key
      * @return void
-     * @throws LocalizedException
+     * @throws ReviewInputException
      */
     public function validate(RequestInterface $request, string $key): void
     {
@@ -46,7 +46,7 @@ class ReCaptchaValidator
         try {
             $response = $this->captchaResponseResolver->resolve($request);
         } catch (InputException) {
-            throw new LocalizedException(__($this->errorMessageConfig->getValidationFailureMessage()));
+            throw new ReviewInputException(__($this->errorMessageConfig->getValidationFailureMessage()));
         }
 
         $validationResult = $this->captchaValidator->isValid($response, $validationConfig);
@@ -55,9 +55,13 @@ class ReCaptchaValidator
         }
 
         foreach ($validationResult->getErrors() as $errorCode => $errorMessage) {
-            $this->logger->error(sprintf('reCAPTCHA "%s" form error [%s]: %s', $key, $errorCode, $errorMessage));
+            $this->logger->error('reCAPTCHA form validation error', [
+                'form' => $key,
+                'error_code' => $errorCode,
+                'error_message' => $errorMessage,
+            ]);
         }
 
-        throw new LocalizedException(__($this->errorMessageConfig->getValidationFailureMessage()));
+        throw new ReviewInputException(__($this->errorMessageConfig->getValidationFailureMessage()));
     }
 }
