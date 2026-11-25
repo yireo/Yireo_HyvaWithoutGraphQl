@@ -13,6 +13,7 @@ use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\DB\Sql\Expression;
+use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -253,6 +254,10 @@ class ProductProvider
                 'exception' => $throwable->getMessage(),
             ]);
 
+            return [];
+        }
+
+        if (!$store instanceof Store) {
             return [];
         }
 
