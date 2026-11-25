@@ -17,9 +17,14 @@ class FilterableAttributeAllowlistTest extends TestCase
         $eavConfig->expects($this->never())->method('getAttribute');
         $allowlist = new FilterableAttributeAllowlist($eavConfig);
 
-        foreach (['sku', 'name', 'price', 'category_id'] as $code) {
+        foreach (['sku', 'name', 'price'] as $code) {
             $this->assertTrue($allowlist->isAllowed($code), $code);
         }
+    }
+
+    public function testCategoryIdIsNotAFixedAttribute(): void
+    {
+        $this->assertFalse($this->createAllowlist(['is_filterable' => '1'], null)->isAllowed('category_id'));
     }
 
     public function testFilterableAttributeIsAllowed(): void

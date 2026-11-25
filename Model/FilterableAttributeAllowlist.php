@@ -13,7 +13,7 @@ use Throwable;
  */
 class FilterableAttributeAllowlist
 {
-    private const ALWAYS_ALLOWED = ['sku', 'name', 'price', 'category_id'];
+    private const ALWAYS_ALLOWED = ['sku', 'name', 'price'];
 
     private const ALLOWING_PROPERTIES = ['is_filterable', 'is_filterable_in_search', 'used_for_sort_by'];
 
