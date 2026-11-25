@@ -9,19 +9,18 @@ use Magento\Framework\App\Request\InvalidRequestException;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Data\Form\FormKey\Validator as FormKeyValidator;
-use Magento\Framework\Exception\LocalizedException;
 use Psr\Log\LoggerInterface;
 use Throwable;
 use Yireo\HyvaWithoutGraphQl\Config\Config;
 use Yireo\HyvaWithoutGraphQl\Controller\JsonResultBuilder;
+use Yireo\HyvaWithoutGraphQl\Exception\ReviewInputException;
 use Yireo\HyvaWithoutGraphQl\Service\ReCaptchaValidator;
 use Yireo\HyvaWithoutGraphQl\Service\ReviewSaver;
 
 /**
  * Replaces the GraphQL `createProductReview` mutation of the Hyvä review form.
  *
- * CSRF is validated within `execute()` instead of by `Magento\Framework\App\Request\CsrfValidator`,
- * because the default validator skips AJAX requests and answers with a redirect instead of JSON.
+ * The form key is always validated, also for AJAX requests, which the default CSRF validator skips.
  */
 class Save implements HttpPostActionInterface, CsrfAwareActionInterface
 {
@@ -44,13 +43,6 @@ class Save implements HttpPostActionInterface, CsrfAwareActionInterface
             return $this->jsonResultBuilder->createError((string)__('Not available.'), 404);
         }
 
-        if (!$this->formKeyValidator->validate($this->request)) {
-            return $this->jsonResultBuilder->createError(
-                (string)__('Invalid Form Key. Please refresh the page.'),
-                403
-            );
-        }
-
         try {
             $this->reCaptchaValidator->validate($this->request, self::RECAPTCHA_KEY);
 
@@ -61,10 +53,10 @@ class Save implements HttpPostActionInterface, CsrfAwareActionInterface
                 trim((string)$this->request->getParam('text', ''), " \f\n\r\t\v\x00"),
                 $this->getRatings()
             );
-        } catch (LocalizedException $exception) {
+        } catch (ReviewInputException $exception) {
             return $this->jsonResultBuilder->createError($exception->getMessage(), 400);
         } catch (Throwable $throwable) {
-            $this->logger->error('Unable to save product review: ' . $throwable->getMessage());
+            $this->logger->error('Unable to save product review', ['exception' => $throwable]);
 
             return $this->jsonResultBuilder->createError(
                 (string)__('We can\'t post your review right now.'),
@@ -99,17 +91,13 @@ class Save implements HttpPostActionInterface, CsrfAwareActionInterface
 
     public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
     {
-        return null;
+        return new InvalidRequestException(
+            $this->jsonResultBuilder->createError((string)__('Invalid Form Key. Please refresh the page.'), 403)
+        );
     }
 
-    /**
-     * Bypass the framework CSRF validator for this AJAX endpoint.
-     *
-     * The default validator skips AJAX requests and would respond with a redirect instead of JSON.
-     * CSRF protection is enforced explicitly inside execute() through the form-key validator.
-     */
     public function validateForCsrf(RequestInterface $request): ?bool
     {
-        return true;
+        return $this->formKeyValidator->validate($request);
     }
 }
