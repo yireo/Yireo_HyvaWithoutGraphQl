@@ -43,6 +43,7 @@
         "Magento_GraphQl",
         "Magento_GraphQlResolverCache",
         "Magento_Indexer",
+        "Magento_MediaGalleryUiApi",
         "Magento_Payment",
         "Magento_Quote",
         "Magento_QuoteGraphQl",
@@ -67,8 +68,8 @@
         }
     ],
     "tests": {
-        "unit": 30,
-        "integration": 18,
+        "unit": 65,
+        "integration": 49,
         "functional": 0
     }
 }
