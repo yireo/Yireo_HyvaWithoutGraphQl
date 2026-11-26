@@ -2,7 +2,8 @@ schema_version: "1.6.0"
 id: YIREO-HYVA-WITHOUT-GRAPHQL-2026-001
 published: "2026-11-26T00:00:00Z"
 modified: "2026-11-26T00:00:00Z"
-aliases: []
+aliases:
+  - GHSA-327f-8vf2-2c8w
 summary: Unauthenticated slider and review endpoints allow resource exhaustion, unintended data access and invalid reviews
 details: >
   In version 0.0.1 the frontend controllers that replace the Hyvä GraphQL calls accepted unvalidated input from
