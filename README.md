@@ -1,10 +1,14 @@
 # Yireo_HyvaWithoutGraphQl
 
 <!-- badges.specs.start -->
+<div class="github-specs-badges">
+
 ![Magento version](https://img.shields.io/badge/Magento-2.4.6%20%7C%202.4.9-orange)
-![PHP version](https://img.shields.io/badge/PHP-8.1%E2%80%938.5-777BB4)
+![PHP version](https://img.shields.io/badge/PHP-8.2%E2%80%938.5-777BB4)
 ![License](https://img.shields.io/badge/License-OSL--3.0-blue)
-![Latest Version](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/-/badges/release.svg)
+![Latest Version](https://img.shields.io/packagist/v/yireo/magento2-hyva-without-graph-ql)
+
+</div>
 <!-- badges.specs.end -->
 
 
@@ -111,10 +115,13 @@ left untouched and the controllers answer with a 404.
 ## Current status
 
 <!-- badges.test.start -->
-[![Static Tests](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/badges/main/pipeline.svg?job=static-tests)](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/-/pipelines)
-[![Unit Tests](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/badges/main/pipeline.svg?job=unit-tests)](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/-/pipelines)
-[![Integration Tests](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/badges/main/pipeline.svg?job=integration-tests)](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/-/pipelines)
-[![Playwright](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/badges/main/pipeline.svg?job=playwright)](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/-/pipelines)
-[![DI Compilation](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/badges/main/pipeline.svg?job=compile)](https://gitlab.yireo.com/loki-checkout/Yireo_HyvaWithoutGraphQl/-/pipelines)
-<!-- badges.test.end -->
+<div class="github-pipeline-badges">
 
+![Static Tests](https://img.shields.io/github/actions/workflow/status/yireo/Yireo_HyvaWithoutGraphQl/static-tests.yml?label=static-tests)
+![Unit Tests](https://img.shields.io/github/actions/workflow/status/yireo/Yireo_HyvaWithoutGraphQl/unit-tests.yml?label=unit-tests)
+![Integration Tests](https://img.shields.io/github/actions/workflow/status/yireo/Yireo_HyvaWithoutGraphQl/integration-tests.yml?label=integration-tests)
+![Playwright](https://img.shields.io/github/actions/workflow/status/yireo/Yireo_HyvaWithoutGraphQl/playwright.yml?label=playwright)
+![DI Compilation](https://img.shields.io/github/actions/workflow/status/yireo/Yireo_HyvaWithoutGraphQl/compile.yml?label=compile)
+
+</div>
+<!-- badges.test.end -->
