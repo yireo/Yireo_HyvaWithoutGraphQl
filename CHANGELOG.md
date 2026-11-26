@@ -6,6 +6,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 26 November 2026
+### Added
+- Slider requests are now signed with an HMAC derived from the deployment crypt key; missing or invalid signatures are rejected with a 403 (flush the caches after upgrading so cached slider markup carries a signature).
+- Allowlist of product attributes that slider filters may use; filters on other attributes are ignored.
+
+### Changed
+- Declared the dependency on `Magento_Eav` and moved PHPUnit to `require-dev`.
+
+### Fixed
+- The slider endpoint could be abused for heavy queries: the number of filters, list values, SKUs, category IDs and linked source products is now capped, short `like` wildcards are rejected and the page size is applied in SQL.
+- Sliders only use active categories below the store root category, validated in a single query, and keep the requested category mode.
+- Cross-sell sliders read the cart SKUs from the checkout session instead of the URL, and no longer drop SKU "0".
+- A SKU in a different case no longer takes a slider slot without being shown.
+- The slider shows an error message when its request fails.
+- Reviews could be posted for disabled, invisible or other-website products and with inactive or foreign ratings; these are now rejected with a generic message.
+- The review form key is validated through the Magento CSRF validator, and malformed form keys, review fields or rating IDs get a 403 or 400 response instead of an error.
+- Internal error details are no longer exposed in review responses but logged instead.
+- A failing review save is now rolled back completely, so no partial votes are left behind.
+- Observers of the review product init events no longer fail on a missing controller action.
+- Client-side messages are escaped before being rendered as HTML (XSS).
+- Templates are only swapped when their path matches on a path boundary.
+- The admin ACL resource is nested under Stores > Settings > Configuration, fixing an invalid merged `acl.xml`.
+
 ## [0.0.1] - 13 October 2026
 ### Added
 - Plugin `SwapGraphQlTemplates` on `Magento\Framework\View\TemplateEngine\Php` that replaces or extends Hyvä templates containing a GraphQL call.
