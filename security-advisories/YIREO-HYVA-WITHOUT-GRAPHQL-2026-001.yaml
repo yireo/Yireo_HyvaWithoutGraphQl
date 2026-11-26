@@ -1,0 +1,44 @@
+schema_version: "1.6.0"
+id: YIREO-HYVA-WITHOUT-GRAPHQL-2026-001
+published: "2026-11-26T00:00:00Z"
+modified: "2026-11-26T00:00:00Z"
+aliases: []
+summary: Unauthenticated slider and review endpoints allow resource exhaustion, unintended data access and invalid reviews
+details: >
+  In version 0.0.1 the frontend controllers that replace the Hyvä GraphQL calls accepted unvalidated input from
+  unauthenticated visitors. The slider endpoint (hyva-without-graphql/products/slider) accepted unsigned parameters
+  with an unlimited number of attribute filters, list values, SKUs and category IDs, short like-wildcards and filters
+  on any product attribute, allowing resource-heavy database queries (denial of service) and product lookups via
+  non-filterable attributes and inactive categories or categories of other stores. Cross-sell sliders embedded the
+  SKUs of the cart in the URL. The review endpoint (hyva-without-graphql/reviews/save) bypassed the Magento CSRF
+  validator, accepted reviews for disabled, invisible or other-website products and with inactive or foreign
+  ratings, could leave partial votes behind on failure and returned internal exception messages to the client.
+  Messages returned to the browser were rendered via x-html without escaping. Version 0.1.0 signs the slider
+  parameters with an HMAC derived from the deployment crypt key, caps and allowlists the filters, reads cart SKUs
+  from the checkout session, validates reviews, ratings and the form key through the Magento CSRF validator, saves
+  reviews in a single transaction, hides internal errors and escapes client-side messages. After upgrading, flush
+  the caches so that cached slider markup carries a valid signature.
+severity:
+  - type: CVSS_V3
+    score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L"
+affected:
+  - package:
+      ecosystem: Packagist
+      name: yireo/magento2-hyva-without-graph-ql
+    ranges:
+      - type: ECOSYSTEM
+        events:
+          - introduced: "0"
+          - fixed: "0.1.0"
+references:
+  - type: PACKAGE
+    url: https://github.com/yireo/Yireo_HyvaWithoutGraphQl
+  - type: FIX
+    url: https://github.com/yireo/Yireo_HyvaWithoutGraphQl/releases/tag/0.1.0
+database_specific:
+  cwe_ids:
+    - CWE-400
+    - CWE-20
+    - CWE-352
+    - CWE-209
+    - CWE-79
